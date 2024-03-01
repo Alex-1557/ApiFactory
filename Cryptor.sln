@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34316.72
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Cryptor", "Cryptor\Cryptor\Cryptor\Cryptor.vbproj", "{740F2A4C-9EA7-479A-B5FB-1C6563434AED}"
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "CryptorStub", "Cryptor\CryptorStub\CryptorStub\CryptorStub.vbproj", "{CF41E4B4-396C-4F6F-BAB3-76E1B2B6C385}"
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "CryptorTest", "Cryptor\CryptorTest\CryptorTest\CryptorTest.vbproj", "{AA5B8399-3B7E-46EC-A6BE-D20935B14CC1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{740F2A4C-9EA7-479A-B5FB-1C6563434AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{740F2A4C-9EA7-479A-B5FB-1C6563434AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{740F2A4C-9EA7-479A-B5FB-1C6563434AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{740F2A4C-9EA7-479A-B5FB-1C6563434AED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF41E4B4-396C-4F6F-BAB3-76E1B2B6C385}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF41E4B4-396C-4F6F-BAB3-76E1B2B6C385}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF41E4B4-396C-4F6F-BAB3-76E1B2B6C385}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF41E4B4-396C-4F6F-BAB3-76E1B2B6C385}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA5B8399-3B7E-46EC-A6BE-D20935B14CC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA5B8399-3B7E-46EC-A6BE-D20935B14CC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA5B8399-3B7E-46EC-A6BE-D20935B14CC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA5B8399-3B7E-46EC-A6BE-D20935B14CC1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
+	EndGlobalSection
+EndGlobal

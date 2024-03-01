@@ -1,0 +1,1116 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DasMulli.Win32.ServiceUtils</name>
+    </assembly>
+    <members>
+        <member name="T:DasMulli.Win32.ServiceUtils.ErrorSeverity">
+            <summary>
+            Specifies the severity of the error if the service fails to start during boot 
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ErrorSeverity.Ignore">
+            <summary>
+            SC.exe help:
+            The error is logged and startup continues. No notification is given to the user beyond recording the error in the Event Log.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ErrorSeverity.Normal">
+            <summary>
+            SC.exe help:
+            The error is logged and a message box is displayed informing the user that a service has failed to start. Startup will continue. This is the default setting.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ErrorSeverity.Severe">
+            <summary>
+            SC.exe help:
+            The error is logged (if possible). The computer attempts to restart with the last-known-good configuration. This could result in the computer being able to restart, but the service may still be unable to run.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ErrorSeverity.Crititcal">
+            <summary>
+            SC.exe help:
+            The error is logged (if possible). The computer attempts to restart with the last-known-good configuration. If the last-known-good configuration fails, startup also fails, and the boot process halts with a Stop error.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.HashCode">
+            <summary>
+            Simplifies the work of hashing.
+            Taken from https://rehansaeed.com/gethashcode-made-easy/", and modified with Reshaper
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.IPausableWin32Service">
+            <inheritdoc />
+            <summary>
+            Interface to allow implementing windows services that can start and stop as well as pause and continue in between.
+            Note that after a call to Pause(), the service can receive either Continue() or Stop()
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IPausableWin32Service.Pause">
+            <summary>
+            Pauses the service.
+            Expect either Continue() or Stop() to be called afterwards.
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IPausableWin32Service.Continue">
+            <summary>
+            Continues/Resumes the service.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceStoppedCallback">
+            <summary>
+            Callback type that is used to allow implementations of <see cref="T:DasMulli.Win32.ServiceUtils.IWin32Service"/> to notify
+            the service manager in case it stopped prematurely / without being requested to stop.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.IWin32Service">
+            <summary>
+            Interface to allow implementing simple windows services that can start and stop
+            </summary>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.IWin32Service.ServiceName">
+            <summary>
+            Returns the name of the service.
+            </summary>
+            <value>
+            The name of the service.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IWin32Service.Start(System.String[],DasMulli.Win32.ServiceUtils.ServiceStoppedCallback)">
+            <summary>
+            Starts the service with the startup arguments received from windows.
+            </summary>
+            <param name="startupArguments">The startup arguments.</param>
+            <param name="serviceStoppedCallback">The service stopped callback the service can call if it stopped without being requested to stop.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IWin32Service.Stop">
+            <summary>
+            Stops the service.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine">
+            <summary>
+            Interface to implement advanced services through custom handling all service state events.
+            
+            See <see cref="T:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine"/> for a sample implementation.
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine.OnStart(System.String[],DasMulli.Win32.ServiceUtils.ServiceStatusReportCallback)">
+            <summary>
+            Called when the service is started.
+            Use the provided <paramref name="statusReportCallback"/> to notify the service manager about
+            state changes such as started, paused etc.
+            </summary>
+            <param name="startupArguments">The startup arguments passed via windows' service configuration.</param>
+            <param name="statusReportCallback">The status report callback.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine.OnCommand(DasMulli.Win32.ServiceUtils.ServiceControlCommand,System.UInt32)">
+            <summary>
+            Called when a command was received from windows' service system.
+            </summary>
+            <param name="command">The received command.</param>
+            <param name="commandSpecificEventType">Type of the command specific event. See description of dwEventType at https://msdn.microsoft.com/en-us/library/windows/desktop/ms683241(v=vs.85).aspx </param>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.PausableServiceStateMachine">
+            <summary>
+            Implemets the state machine to handle a simple service that only implement starting and stopping.
+            These simple services are implemented by configruming to the <see cref="T:DasMulli.Win32.ServiceUtils.IWin32Service"/> protocol.
+            </summary>
+            <seealso cref="T:DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine" />
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.PausableServiceStateMachine.#ctor(DasMulli.Win32.ServiceUtils.IPausableWin32Service)">
+            <summary>
+            Initializes a new <see cref="T:DasMulli.Win32.ServiceUtils.PausableServiceStateMachine"/> to run the specified service.
+            </summary>
+            <param name="serviceImplementation">The service implementation.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.PausableServiceStateMachine.OnStart(System.String[],DasMulli.Win32.ServiceUtils.ServiceStatusReportCallback)">
+            <summary>
+            Called when the service is started.
+            Use the provided <paramref name="statusReportCallback" /> to notify the service manager about
+            state changes such as started, paused etc.
+            </summary>
+            <param name="startupArguments">The startup arguments passed via windows' service configuration.</param>
+            <param name="statusReportCallback">The status report callback.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.PausableServiceStateMachine.OnCommand(DasMulli.Win32.ServiceUtils.ServiceControlCommand,System.UInt32)">
+            <summary>
+            Called when a command was received from windows' service system.
+            </summary>
+            <param name="command">The received command.</param>
+            <param name="commandSpecificEventType">Type of the command specific event. See description of dwEventType at https://msdn.microsoft.com/en-us/library/windows/desktop/ms685996(v=vs.85).aspx </param>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ScAction">
+            <summary>
+            Service control actions used to specify what to do in case of service failures.
+            </summary>
+            <seealso cref="T:System.IEquatable`1" />
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ScAction.Type">
+            <summary>
+            Gets or sets the type of service control action.
+            </summary>
+            <value>
+            The type of service control action.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ScAction.Delay">
+            <summary>
+            Gets or sets the amount of time the action is to be delayed when a failure occurs.
+            </summary>
+            <value>
+            The amount of time the action is to be delayed when a failure occurs.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ScAction.Equals(DasMulli.Win32.ServiceUtils.ScAction)">
+            <summary>
+            Indicates whether the current object is equal to another object of the same type.
+            </summary>
+            <param name="other">An object to compare with this object.</param>
+            <returns>
+            true if the current object is equal to the <paramref name="other">other</paramref> parameter; otherwise, false.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ScAction.Equals(System.Object)">
+            <summary>
+            Determines whether the specified <see cref="T:System.Object" />, is equal to this instance.
+            </summary>
+            <param name="obj">The <see cref="T:System.Object" /> to compare with this instance.</param>
+            <returns>
+              <c>true</c> if the specified <see cref="T:System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ScAction.GetHashCode">
+            <summary>
+            Returns a hash code for this instance.
+            </summary>
+            <returns>
+            A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+            </returns>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ScActionType">
+            <summary>
+            Action types used for failure actions.
+            Used in the <see cref="T:DasMulli.Win32.ServiceUtils.ScAction"/> type.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ScActionType.ScActionNone">
+            <summary>
+            No action
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ScActionType.ScActionRestart">
+            <summary>
+            Restart service
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ScActionType.ScActionReboot">
+            <summary>
+            Reboot the computer (meant to be used for drivers and not in managed services)
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ScActionType.ScActionRunCommand">
+            <summary>
+            Run a command
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags">
+            <summary>
+            Values used to indicate which service control commands are accepted by a service.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.None">
+            <summary>
+            No command is accepted. Usually used during StartPending/StopPending/PausePending states.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.Stop">
+            <summary>
+            The service can be stopped
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.PauseContinue">
+            <summary>
+            The service can be paused when running or continued when currently paused.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.PauseContinueStop">
+            <summary>
+            The service can be stopped or paused when running or continued when currently paused.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.Shutdown">
+            <summary>
+            The shutdown command is accepted which notfies the service about a system shutdown.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.ParamChange">
+            <summary>
+            Indicates that the service is expected to re-read its startup parameters without needing to be restarted.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.NetBindChange">
+            <summary>
+            Tndicates that the service is a network service that can re-read its binding parameters without needing to be restarted.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.PreShutdown">
+            <summary>
+            Indicates that the service can perform pre-sutdown tasks.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.HardwareProfileChange">
+            <summary>
+            The service can react to system hardware changes.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.PowerEvent">
+            <summary>
+            The service can react to power status cahnges.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.SessionChange">
+            <summary>
+            The service can react to system session status changes.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.TimeChange">
+            <summary>
+            The service can react to system time changes.
+            Only supported on Windows 7 / Windows Server 2008 R2 and higher
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.TriggerEvent">
+            <summary>
+            The service can be notified when an event for which the service has explicitly registered occurs.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceAcceptedControlCommandsFlags.UserModeReboot">
+            <summary>
+            The service can react when a user initiates a reboot.
+            This event can only be sent by the system.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceControlCommand">
+            <summary>
+            Control command codes used issue control commands or
+            notification events to services.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Stop">
+            <summary>
+            Instructs a service to stop.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Pause">
+            <summary>
+            Instructs a service to pause.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Continue">
+            <summary>
+            Instructs a service to continue after being paused.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Interrogate">
+            <summary>
+            Instructs a service to report its current status to the service control manager.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Shutdown">
+            <summary>
+            Notifies a service of a shutdown.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.Paramchange">
+            <summary>
+            Instructs a service to re-read its startup parameters.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.NetBindAdd">
+            <summary>
+            Notifies a network service that there is a new
+            component available for binding that it should bind to.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.NetBindRemoved">
+            <summary>
+            Notifies a network service that a component for binding
+            has been removed and that it should unbind from it.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.NetBindEnable">
+            <summary>
+            Notifies a network service that a disabled binding
+            has ben enabled and that it should add the new binding.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.NetBindDisable">
+            <summary>
+            Notifies a network service that one of its bindings
+            has ben disabled and that it should remove the binding.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.DeviceEvent">
+            <summary>
+            Notifies a service of device events.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.HardwareProfileChange">
+            <summary>
+            Notifies a service that the computer's hardware profile has changed.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.PowerEvent">
+            <summary>
+            Notifies a service of system power events.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.SessionChange">
+            <summary>
+            Notifies a service of session change events.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.TimeChange">
+            <summary>
+            Notifies a service that the system time has changed.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.TriggerEvent">
+            <summary>
+            Notifies a service registered for a service trigger event that the event has occurred.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceControlCommand.UserModeReboot">
+            <summary>
+            Notifies a service that the user has initiated a reboot.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceDefinition">
+            <summary>
+            Contains settings for a windows service registration.
+            </summary>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.ServiceName">
+            <summary>
+            Gets or sets the name of the service.
+            </summary>
+            <value>
+            The name of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.DisplayName">
+            <summary>
+            Gets or sets the display name of the service.
+            </summary>
+            <value>
+            The display name of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.Description">
+            <summary>
+            Gets or sets the service description.
+            </summary>
+            <value>
+            The service description.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.BinaryPath">
+            <summary>
+            Gets or sets the binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </summary>
+            <value> 
+            The binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.Credentials">
+            <summary>
+            Gets or sets the credentials for the account the service shall run as.
+            </summary>
+            <value>
+            The credentials for the account the service shall run as.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.FailureActions">
+            <summary>
+            Gets or sets the failure actions of the service.
+            </summary>
+            <value>
+            The failure actions of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.FailureActionsOnNonCrashFailures">
+            <summary>
+            Gets or sets a value indicating whether the failure actions will be triggered
+            even if the service reports stopped but with a non-zero exit code.
+            If false, the failure actions will only be triggered if the service terminates
+            without reporting the stopped state (=> considered a crash).
+            </summary>
+            <value>
+            When <c>true</c>, the configured failure actions will be triggered
+            even if the service reports stopped but with a non-zero exit code.
+            If <c>fasle</c>, the failure actions will only be triggered if the service terminates
+            without reporting the stopped state (=> considered a crash).
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.AutoStart">
+            <summary>
+            Gets or sets a value indicating whether the service shall be started automatically during system startup.
+            </summary>
+            <value>
+              <c>true</c> if the service shall be started automatically during system startup; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.ErrorSeverity">
+            <summary>
+            Gets or sets the error severity of service failures.
+            </summary>
+            <value>
+            The error severity of service failures.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinition.DelayedAutoStart">
+            <summary>
+            Gets or sets a value indicating whether the service shall started delayed when started
+            automatically on startup.
+            </summary>
+            <value>
+              <c>true</c> if the service shall started delayed when started
+            automatically on startup; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinition.#ctor(System.String,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinition"/> class.
+            </summary>
+            <param name="serviceName">The name of the service.</param>
+            <param name="binPath">
+            The binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </param>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder">
+            <summary>
+            Builder class used to construct instances of <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinition"/> instances.
+            </summary>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.ServiceName">
+            <summary>
+            Gets or sets the name of the service.
+            </summary>
+            <value>
+            The name of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.DisplayName">
+            <summary>
+            Gets or sets the display name of the service.
+            </summary>
+            <value>
+            The display name of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.Description">
+            <summary>
+            Gets or sets the service description.
+            </summary>
+            <value>
+            The service description.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.BinaryPath">
+            <summary>
+            Gets or sets the binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </summary>
+            <value> 
+            The binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.Credentials">
+            <summary>
+            Gets or sets the credentials for the account the service shall run as.
+            </summary>
+            <value>
+            The credentials for the account the service shall run as.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.FailureActions">
+            <summary>
+            Gets or sets the failure actions of the service.
+            </summary>
+            <value>
+            The failure actions of the service.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.FailureActionsOnNonCrashFailures">
+            <summary>
+            Gets or sets a value indicating whether the failure actions will be triggered
+            even if the service reports stopped but with a non-zero exit code.
+            If false, the failure actions will only be triggered if the service terminates
+            without reporting the stopped state (=> considered a crash).
+            </summary>
+            <value>
+            When <c>true</c>, the configured failure actions will be triggered
+            even if the service reports stopped but with a non-zero exit code.
+            If <c>fasle</c>, the failure actions will only be triggered if the service terminates
+            without reporting the stopped state (=> considered a crash).
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.AutoStart">
+            <summary>
+            Gets or sets a value indicating whether the service shall be started automatically during system startup.
+            </summary>
+            <value>
+              <c>true</c> if the service shall be started automatically during system startup; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.ErrorSeverity">
+            <summary>
+            Gets or sets the error severity of service failures.
+            </summary>
+            <value>
+            The error severity of service failures.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.DelayedAutoStart">
+            <summary>
+            Gets or sets a value indicating whether the service shall started delayed when started
+            automatically on startup.
+            </summary>
+            <value>
+              <c>true</c> if the service shall started delayed when started
+            automatically on startup; otherwise, <c>false</c>.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/> class.
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/> class.
+            </summary>
+            <param name="serviceName">The name of the service.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.#ctor(DasMulli.Win32.ServiceUtils.ServiceDefinition)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/> class
+            using the values of an existing <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinition"/> instance.
+            </summary>
+            <param name="definition">The service definition to copy values from.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.#ctor(DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/> class
+            using the values of an existing <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/> instance.
+            </summary>
+            <param name="definitionBuilder">The existing builder to copy values from.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.Build">
+            <summary>
+            Builds a new instance of <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinition"/> using the configured values.
+            </summary>
+            <returns>New instance of <see cref="T:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder"/></returns>
+            <exception cref="T:System.InvalidOperationException">
+            Thown when <see cref="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.ServiceName"/> or <see cref="P:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.BinaryPath"/> are null or empty.
+            </exception>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithServiceName(System.String)">
+            <summary>
+            Changes the name of the service.
+            </summary>
+            <param name="serviceName">New name of the service.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithDisplayName(System.String)">
+            <summary>
+            Changes the display name of the service.
+            </summary>
+            <param name="displayName">The new display name of the service.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithDescription(System.String)">
+            <summary>
+            Changes the service description.
+            </summary>
+            <param name="description">The new service description.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithBinaryPath(System.String)">
+            <summary>
+            Changes the binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </summary>
+            <param name="binaryPath">
+            The new binary path of the service.
+            This includes the path to the executable as well as the
+            arguments to be passed to it.
+            </param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithCredentials(DasMulli.Win32.ServiceUtils.Win32ServiceCredentials)">
+            <summary>
+            Changes the credentials for the account the service shall run as.
+            </summary>
+            <param name="credentials">The new credentials for the account the service shall run as.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithFailureActions(DasMulli.Win32.ServiceUtils.ServiceFailureActions)">
+            <summary>
+            Changes the failure actions of the service.
+            </summary>
+            <param name="failureActions">The new failure actions of the service.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithFailureActionsOnNonCrashFailures(System.Boolean)">
+            <summary>
+            Changes the flag to trigger failure actions on non crash failures.
+            </summary>
+            <param name="failureActionsOnNonCrashFailures">
+            When <c>true</c>, the configured failure actions will be triggered
+            even if the service reports stopped but with a non-zero exit code.
+            If <c>fasle</c>, the failure actions will only be triggered if the service terminates
+            without reporting the stopped state (=> considered a crash).
+            </param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithAutoStart(System.Boolean)">
+            <summary>
+            Chagnges the flag indicating whether the service shall be started automatically during system startup.
+            </summary>
+            <param name="autoStart">
+              <c>true</c> if the service shall be started automatically during system startup; otherwise, <c>false</c>.
+            </param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithErrorSeverity(DasMulli.Win32.ServiceUtils.ErrorSeverity)">
+            <summary>
+            Changes the error severity of service failures.
+            </summary>
+            <param name="errorSeverity">The new error severity of service failures.</param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceDefinitionBuilder.WithDelayedAutoStart(System.Boolean)">
+            <summary>
+            Changes the delayed automatic start flag indicating whether the service shall started delayed when started
+            automatically on startup.
+            </summary>
+            <param name="delayedAutoStart">
+              <c>true</c> if the service shall started delayed when started
+            automatically on startup; otherwise, <c>false</c>.
+            </param>
+            <returns>Returns the current instance</returns>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceFailureActions">
+            <inheritdoc />
+            <summary>
+            Represents a set of configurations that specify which actions to take if a service fails.
+            
+            A managed class that holds data referring to a <see cref="T:DasMulli.Win32.ServiceUtils.ServiceFailureActionsInfo" /> class which has unmanaged resources
+            </summary>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceFailureActions.ResetPeriod">
+            <summary>
+            Gets the reset period in seconds after which previous failures are cleared.
+            For example: When a service fails two times and then doesn't fail for this amount of time, then an
+            additional failure is considered a first failure and not a third.
+            </summary>
+            <value>
+            The reset period in seconds after which previous failures are cleared.
+            For example: When a service fails two times and then doesn't fail for this amount of time, then an
+            additional failure is considered a first failure and not a third.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceFailureActions.RebootMessage">
+            <summary>
+            Gets the reboot message used in case a reboot failure action is configured.
+            </summary>
+            <value>
+            The reboot message used in case a reboot failure action is configured.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceFailureActions.RestartCommand">
+            <summary>
+            Gets the command run in case a "run command" failure action is configured.
+            </summary>
+            <value>
+            The command run in case a "run command" failure action is configured.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.ServiceFailureActions.Actions">
+            <summary>
+            Gets the collections of configured failure actions for each successive time the service failes.
+            </summary>
+            <value>
+            The collections of configured failure actions for each successive time the service failes.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActions.#ctor(System.TimeSpan,System.String,System.String,System.Collections.Generic.IReadOnlyCollection{DasMulli.Win32.ServiceUtils.ScAction})">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceFailureActions" /> class.
+            </summary>
+            <param name="resetPeriod">The reset period in seconds after which previous failures are cleared.</param>
+            <param name="rebootMessage">The reboot message used in case a reboot failure action is contaiend in <paramref name="actions"/>.</param>
+            <param name="restartCommand">The command run in case a "run command" failure action is contained in <paramref name="actions"/>.</param>
+            <param name="actions">The failure actions.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActions.Equals(System.Object)">
+            <summary>
+            Determines whether the specified <see cref="T:System.Object" />, is equal to this instance.
+            </summary>
+            <param name="obj">The <see cref="T:System.Object" /> to compare with this instance.</param>
+            <returns>
+              <c>true</c> if the specified <see cref="T:System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActions.GetHashCode">
+            <summary>
+            Returns a hash code for this instance.
+            </summary>
+            <returns>
+            A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActions.Equals(DasMulli.Win32.ServiceUtils.ServiceFailureActions)">
+            <summary>
+            Indicates whether the current object is equal to another object of the same type.
+            </summary>
+            <param name="other">An object to compare with this object.</param>
+            <returns>
+            true if the current object is equal to the <paramref name="other">other</paramref> parameter; otherwise, false.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActionsFlag.#ctor(System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceFailureActionsFlag"/> struct.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceFailureActionsInfo.Default">
+            <summary>
+            This is the default, as reported by Windows.
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.ServiceFailureActionsInfo.#ctor(System.TimeSpan,System.String,System.String,System.Collections.Generic.IReadOnlyCollection{DasMulli.Win32.ServiceUtils.ScAction})">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.ServiceFailureActionsInfo"/> class.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceState">
+            <summary>
+            The state a service is in
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.Stopped">
+            <summary>
+            The service is stopped (= not running)
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.StartPending">
+            <summary>
+            The service is starting
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.StopPending">
+            <summary>
+            The stopping
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.Running">
+            <summary>
+            The service is running (= started successfully)
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.ContinuePending">
+            <summary>
+            The service is about to resume after being paused
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.PausePending">
+            <summary>
+            The service is about to pause
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.Paused">
+            <summary>
+            The service is paused
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.ServiceState.StartPening">
+            <summary>
+            The service is starting.
+            </summary>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.ServiceStatusReportCallback">
+            <summary>
+            This is a callback type passed to custom implementaton of windows service state machines.
+            The callback needs to be called to notify windows about service state changes both when requested to
+            perform state changes by windows or when they are needed because of other reasons (e.g. unexpected termination).
+            
+            Repeatedly calling this callback also prolonges the default timeout for pending states until the service maanger reports the service as failed.
+            
+            Calling this callback will result in a call to SetServiceStatus - see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686241(v=vs.85).aspx
+            </summary>
+            <param name="state">The current state of the service.</param>
+            <param name="acceptedControlCommands">The currently accepted control commands. E.g. when you set the <paramref name="state"/> to <value>Started</value>, you can indicate that you support pausing and stopping in this state.</param>
+            <param name="win32ExitCode">The  current win32 exit code. Use this to indicate a failure when setting the state to <value>Stopped</value>.</param>
+            <param name="waitHint">
+            The estimeated time in milliseconds until a state changing operation finishes.
+            For example, you can repeatedly call this callback with <paramref name="state"/> set to <value>StartPending</value> or <value>StopPending</value>
+            using different values to affect the start/stop progress indicator in service management UI dialogs.
+            </param>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine">
+            <summary>
+            Implemets the state machine to handle a simple service that only implement starting and stopping.
+            These simple services are implemented by configruming to the <see cref="T:DasMulli.Win32.ServiceUtils.IWin32Service"/> protocol.
+            </summary>
+            <seealso cref="T:DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine" />
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine.#ctor(DasMulli.Win32.ServiceUtils.IWin32Service)">
+            <summary>
+            Initializes a new <see cref="T:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine"/> to run the specified service.
+            </summary>
+            <param name="serviceImplementation">The service implementation.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine.OnStart(System.String[],DasMulli.Win32.ServiceUtils.ServiceStatusReportCallback)">
+            <summary>
+            Called when the service is started.
+            Use the provided <paramref name="statusReportCallback" /> to notify the service manager about
+            state changes such as started, paused etc.
+            </summary>
+            <param name="startupArguments">The startup arguments passed via windows' service configuration.</param>
+            <param name="statusReportCallback">The status report callback.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.SimpleServiceStateMachine.OnCommand(DasMulli.Win32.ServiceUtils.ServiceControlCommand,System.UInt32)">
+            <summary>
+            Called when a command was received from windows' service system.
+            </summary>
+            <param name="command">The received command.</param>
+            <param name="commandSpecificEventType">Type of the command specific event. See description of dwEventType at https://msdn.microsoft.com/en-us/library/windows/desktop/ms683241(v=vs.85).aspx</param>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials">
+            <summary>
+            Represents credentials for accounts to run windows services with.
+            </summary>
+            <seealso cref="T:System.IEquatable`1" />
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.UserName">
+            <summary>
+            Gets the name of the user.
+            </summary>
+            <value>
+            The name of the user.
+            </value>
+        </member>
+        <member name="P:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.Password">
+            <summary>
+            Gets the password.
+            </summary>
+            <value>
+            The password.
+            </value>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.#ctor(System.String,System.String)">
+            <summary>
+            Creaes a new <see cref="T:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials"/> instance to represent an account under which to run widows services.
+            </summary>
+            <param name="userName">Name of the user.</param>
+            <param name="password">The password.</param>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.LocalSystem">
+            <summary>
+            The local system account - the service will have full access to the system and machine network credentials.
+            Not recommended to use in producton environments. 
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.LocalService">
+            <summary>
+            The local service account - the service will have minimum access to the system and anonymous network credentails.
+            Recommended for use in logic-only applications.
+            Consider using a custom account instead for granular control over file system permissions.
+            </summary>
+        </member>
+        <member name="F:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.NetworkService">
+            <summary>
+            The local service account - the service will have minimum access to the system and machine network credentails.
+            Recommended for use in logic-only applications that need to authenticate to networks using machine credentials.
+            Consider using a custom account instead for granular control over file system permissions and network authorization control.
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.Equals(DasMulli.Win32.ServiceUtils.Win32ServiceCredentials)">
+            <summary>
+            Indicates whether the current object is equal to another object of the same type.
+            </summary>
+            <param name="other">An object to compare with this object.</param>
+            <returns>
+            true if the current object is equal to the <paramref name="other">other</paramref> parameter; otherwise, false.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.Equals(System.Object)">
+            <summary>
+            Determines whether the specified <see cref="T:System.Object" />, is equal to this instance.
+            </summary>
+            <param name="obj">The <see cref="T:System.Object" /> to compare with this instance.</param>
+            <returns>
+              <c>true</c> if the specified <see cref="T:System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.GetHashCode">
+            <summary>
+            Returns a hash code for this instance.
+            </summary>
+            <returns>
+            A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.op_Equality(DasMulli.Win32.ServiceUtils.Win32ServiceCredentials,DasMulli.Win32.ServiceUtils.Win32ServiceCredentials)">
+            <summary>
+            Implements the operator ==.
+            </summary>
+            <param name="left">The left handside operand.</param>
+            <param name="right">The right handside operand.</param>
+            <returns>
+            [true] if the operands are equal.
+            </returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceCredentials.op_Inequality(DasMulli.Win32.ServiceUtils.Win32ServiceCredentials,DasMulli.Win32.ServiceUtils.Win32ServiceCredentials)">
+            <summary>
+            Implements the operator !=.
+            </summary>
+            <param name="left">The left handside operand.</param>
+            <param name="right">The right handside operand.</param>
+            <returns>
+            [true] if the operands are not equal.
+            </returns>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.Win32ServiceHost">
+            <summary>
+            Runs windows services as requested by windows' service management.
+            Use this class as a replacement for ServiceBase.Run()
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceHost.#ctor(DasMulli.Win32.ServiceUtils.IWin32Service)">
+            <summary>
+            Initializes a new <see cref="T:DasMulli.Win32.ServiceUtils.Win32ServiceHost"/> to run the specified windows service implementation.
+            </summary>
+            <param name="service">The windows service implementation about to be run.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceHost.#ctor(DasMulli.Win32.ServiceUtils.IPausableWin32Service)">
+            <summary>
+            Initializes a new <see cref="T:DasMulli.Win32.ServiceUtils.IPausableWin32Service"/> to run the specified windows service implementation.
+            </summary>
+            <param name="service">The windows service implementation about to be run.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceHost.#ctor(System.String,DasMulli.Win32.ServiceUtils.IWin32ServiceStateMachine)">
+            <summary>
+            Initializes a new <see cref="T:DasMulli.Win32.ServiceUtils.Win32ServiceHost"/> class to run an advanced service with custom state handling.
+            </summary>
+            <param name="serviceName">Name of the windows service.</param>
+            <param name="stateMachine">The custom service state machine implementation to use.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceHost.RunAsync">
+            <summary>
+            Obsolete - pretends to run asynchronously.
+            Only exists for compatibility with 1.0 API
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceHost.Run">
+            <summary>
+            Runs the windows service that this instance was initialized with.
+            This method is inteded to be run from the application's main thread and will block until the service has stopped.
+            </summary>
+            <returns></returns>
+            <exception cref="T:System.ComponentModel.Win32Exception">Thrown when an exception ocurrs when communicating with windows' service system.</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Thrown when run on a non-windows platform.</exception>
+        </member>
+        <member name="T:DasMulli.Win32.ServiceUtils.Win32ServiceManager">
+            <summary>
+            Allows managing registered windows services on a machine
+            </summary>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceManager.#ctor(System.String,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DasMulli.Win32.ServiceUtils.Win32ServiceManager"/> class that
+            can manage windows services on a specified machine and configuration databse.
+            </summary>
+            <param name="machineName">Name of the machine to mamage.</param>
+            <param name="databaseName">Name of the database to maange.</param>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceManager.CreateService(System.String,System.String,System.String,System.String,DasMulli.Win32.ServiceUtils.Win32ServiceCredentials,System.Boolean,System.Boolean,DasMulli.Win32.ServiceUtils.ErrorSeverity)">
+            <summary>
+            Creates a new windows service.
+            </summary>
+            <param name="serviceName">Name of the service.</param>
+            <param name="displayName">The display name of the service.</param>
+            <param name="description">The description of the service.</param>
+            <param name="binaryPath">The path to the binary to use as windows service including arguments.</param>
+            <param name="credentials">The credentials used to run the servic ewith.</param>
+            <param name="autoStart">if set to <c>true</c> the service will start automatically during boot.</param>
+            <param name="startImmediately">if set to <c>true</c> the service will be started immediatly after registering.</param>
+            <param name="errorSeverity">The error severity of the service.</param>
+            <exception cref="T:System.ArgumentException">
+            Thrown when:
+            <paramref name="binaryPath"/> is null or empty
+            or
+            <paramref name="serviceName"/> is null or empty
+            </exception>
+            <exception cref="T:System.PlatformNotSupportedException">Thrown when run on a non-windows platform.</exception>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceManager.CreateService(DasMulli.Win32.ServiceUtils.ServiceDefinition,System.Boolean)">
+            <summary>
+            Creates the service.
+            </summary>
+            <param name="serviceDefinition">The service definition.</param>
+            <param name="startImmediately">if set to <c>true</c> the service will be started immediatly after registering.</param>
+            <exception cref="T:System.ArgumentException">
+            Thrown when:
+            BinaryPath of <paramref name="serviceDefinition"/> is null or empty
+            or
+            ServiceName of <paramref name="serviceDefinition"/> is null or empty
+            </exception>
+            <exception cref="T:System.PlatformNotSupportedException">Thrown when run on a non-windows platform.</exception>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceManager.CreateOrUpdateService(DasMulli.Win32.ServiceUtils.ServiceDefinition,System.Boolean)">
+            <summary>
+            Creates the or update a windows service.
+            Note that the service is not restarted due to changes in its configuration
+            </summary>
+            <param name="serviceDefinition">The service definition.</param>
+            <param name="startImmediately">if set to <c>true</c> the service will be started immediatly after updating. Has no effect if the service is already running.</param>
+            <exception cref="T:System.ArgumentException">
+            Thrown when:
+            BinaryPath of <paramref name="serviceDefinition"/> is null or empty
+            or
+            ServiceName of <paramref name="serviceDefinition"/> is null or empty
+            </exception>
+            <exception cref="T:System.PlatformNotSupportedException">Thrown when run on a non-windows platform.</exception>
+        </member>
+        <member name="M:DasMulli.Win32.ServiceUtils.Win32ServiceManager.DeleteService(System.String)">
+            <summary>
+            Deletes a windows service.
+            </summary>
+            <param name="serviceName">Name of the service to delete.</param>
+            <exception cref="T:System.ArgumentException">Trown when <paramref name="serviceName"/> is null or empty.</exception>
+            <exception cref="T:System.PlatformNotSupportedException">Thrown when run on a non-windows platform.</exception>
+        </member>
+    </members>
+</doc>

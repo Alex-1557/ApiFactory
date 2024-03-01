@@ -1,0 +1,8 @@
+1. Simple ASP.NET Handler on IIS - (Socket project) and any ancient ideas like this https://www.vb-net.com/Dotnet/Tour14/Index.htm
+2. Socket Tcp Sender/Listener, like https://www.vb-net.com/Dotnet/Tour14/Index.htm 
+3. WCF Port sharing services https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-configure-a-wcf-service-to-use-port-sharing 
+4. SVC - GrapHoperWcf1 https://www.vb-net.com/GraphhopperProxy/Index.htm, https://www.vb-net.com/SoapWsdl_vs_XML/Index.htm
+5. ASMX - old version SOAP/WSDL WebService 
+6. WCF as REST - https://www.vb-net.com/WCF-public/Index.htm , https://www.vb-net.com/WCFasREST/Index.htm
+7. Kestrel services - https://www.vb-net.com/Informer/Index.htm
+8. gRPC https://learn.microsoft.com/en-us/aspnet/core/tutorials/grpc/grpc-start?view=aspnetcore-8.0&tabs=visual-studio
